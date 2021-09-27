@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as ply
+from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+
+
+data=pd.read_csv("C:/Users/Utente ASUS/Desktop/Dati Python/MachineLearning/bank/bank-full.csv",sep=";")
+y=data["y"]
+y=np.where(y=="no",0,1)
+x=data.drop("y",axis=1)
+lst_int=list(x.select_dtypes(exclude="object").columns)
+lst_obj=list(x.select_dtypes(exclude="int64").columns)
+enc=OrdinalEncoder()
+scaler=MinMaxScaler()
+enc_df=pd.DataFrame(enc.fit_transform(x[lst_obj]),columns=(lst_obj))
+sca_df=pd.DataFrame(scaler.fit_transform(x[lst_int]),columns=(lst_int))
+x_tr=pd.concat((enc_df,sca_df),axis=1)
+
+paramsRF={"n_estimators":[10,50,100,200,300,500],
+          "criterion":["gini","entropy"]}
+paramKNN={"n_neighbors":[2,5,7],
+          "weights":["uniform","distance"]}
+paramSVC={"kernel":["linear","rbf"],
+          "C":[0.1,1.0,10]}
+paramLG={"C":[0.01,0.1,1.0,10],
+         "penalty":["l2"]}
+
+
+
+x_train,x_test,y_train,y_test=train_test_split(x_tr,y,test_size=0.3)
+
+gridRF=GridSearchCV(estimator=RandomForestClassifier(random_state=42,class_weight="balanced"),param_grid=paramsRF,cv=5,scoring="accuracy")
+gridKNN=GridSearchCV(estimator=KNeighborsClassifier(),param_grid=paramKNN,cv=5,scoring="accuracy")
+gridSVC=GridSearchCV(estimator=SVC(random_state=42,class_weight="balanced"),param_grid=paramSVC,cv=5,scoring="accuracy")
+gridLG=GridSearchCV(estimator=LogisticRegression(class_weight="balanced"),param_grid=paramLG,cv=5,scoring="accuracy")
+
+gridRF.fit(x_train,y_train)
+gridKNN.fit(x_train,y_train)
+gridSVC.fit(x_train,y_train)
+gridLG.fit(x_train,y_train)
+
